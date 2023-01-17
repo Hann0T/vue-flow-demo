@@ -5,23 +5,19 @@ import EditableLabelNode from './components/EditableLabelNode.vue';
 import { VueFlow, useVueFlow } from '@vue-flow/core';
 import { MarkerType, Position } from '@vue-flow/core';
 import { Background } from '@vue-flow/additional-components'
-import { ref, nextTick, watch } from 'vue';
+import { ref, nextTick, watch, onMounted } from 'vue';
+import { useNodeStore } from './stores/nodes.js';
 
 let id = 0;
 const getId = () => `dndnode_${id++}`;
+const nodeStore = useNodeStore();
 
-const { findNode, onConnect, nodes, edges, addEdges, addNodes, viewport, project, vueFlowRef, toObject } = useVueFlow({
-    nodes: [
-        { id: '1', type: 'input', label: 'Node 1', position: { x: 5, y: 250 }, sourcePosition: Position.Right },
-        { id: '2', label: 'Node 2', position: { x: 201, y: 100 }, sourcePosition: Position.Right, targetPosition: Position.Left },
-        { id: '3', label: 'Node 3', position: { x: 201, y: 400 }, sourcePosition: Position.Right, targetPosition: Position.Left },
-        { id: '4', type: 'output', label: 'Node 4', position: { x: 400, y: 200 }, targetPosition: Position.Left },
-    ],
-    edges: [
-        { id: 'e1-3', source: '1', target: '3', type: 'step' },
-        { id: 'e1-2', source: '1', target: '2', type: 'step' },
-    ]
-})
+const { findNode, addEdges, addNodes, onConnect, project, vueFlowRef, toObject } = useVueFlow(nodeStore.nodes);
+
+onConnect((params) => {
+    params.type = nodeStore.currentEdgeType;
+    addEdges([params])
+});
 
 const onDragOver = (event) => {
   if (event.dataTransfer) {
@@ -79,7 +75,6 @@ const onEditableLabelNodeChanges = (newLabel, node) => {
 
         <div class="w-full h-full" @drop.prevent="onDrop">
             <VueFlow 
-                auto-connect 
                 @dragover.prevent="onDragOver"
             >
                 <template #node-label="props">
